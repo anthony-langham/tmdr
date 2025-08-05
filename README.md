@@ -3,22 +3,29 @@
 ![Offline First](https://img.shields.io/badge/offline-first-success)
 ![Terminal Native](https://img.shields.io/badge/UX-terminal--native-yellow)
 
-# tmdr — Too Medical; Didn’t Read
+# tmdr — too medical; didn’t read
 - A fast, offline terminal tool for looking up medical acronyms. 
 - Built for engineers in healthtech.
 
-
 ---
 
-🩺 **tmdr** (Too Medical; Didn’t Read) gives you instant, offline access to medical acronyms — no context switching, no token burn, no fluff.
+🩺 **tmdr** (too medical; didn’t read) 
+- gives you instant, offline access to medical acronyms 
+— no context switching
+- no token burn
+- no bs
 
 ```bash
 $ tmdr abg
 ABG → Arterial Blood Gas
 A test measuring oxygen and carbon dioxide levels in arterial blood.
+```
 
-## Features
-
-## Preview
-
-## License
+# features
+.
+# preview
+.
+# acknowledgements
+.
+# license
+This project is licensed under the MIT License.
