@@ -28,9 +28,17 @@ This is a new project in early development stage. Current repository structure:
 
 ## Development Setup
 
-Initialize the Go module:
+Go module is initialized. To build and run:
 ```bash
-go mod init github.com/anthonylangham/tmdr
+# Build the binary
+go build -o tmdr
+
+# Run directly
+go run main.go
+
+# Run with flags
+go run main.go --version
+go run main.go --help
 ```
 
 ## Implementation Plan
