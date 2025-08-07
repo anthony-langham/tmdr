@@ -8,10 +8,10 @@ import (
 	
 	"github.com/anthonylangham/tmdr/internal/acronym"
 	"github.com/anthonylangham/tmdr/internal/tui"
+	"github.com/anthonylangham/tmdr/internal/version"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const version = "0.1.0"
 
 func main() {
 	var (
@@ -25,7 +25,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("tmdr version %s\n", version)
+		fmt.Printf("tmdr version %s\n", version.Version)
 		os.Exit(0)
 	}
 

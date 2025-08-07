@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/anthonylangham/tmdr/internal/version"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -85,7 +86,7 @@ func (m Model) viewHome() string {
 			"    • Press 'f' to send feedback",
 			"    • Press 'h' or 't' to return home",
 		}
-		dataInfo := "⚙️  version: v0.3"
+		dataInfo := fmt.Sprintf("⚙️  version: v%s", version.Version)
 		
 		content = lipgloss.JoinVertical(
 			lipgloss.Center,

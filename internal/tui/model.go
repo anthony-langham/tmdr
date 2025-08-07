@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/anthonylangham/tmdr/internal/acronym"
+	"github.com/anthonylangham/tmdr/internal/version"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -285,7 +286,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "f":
 			m.state = StateFeedback
-			m.resetFeedbackForm()
+			// Reset field index when entering feedback
+			m.formFieldIndex = 0
+			m.formInteracted = false
 			// Send an Init command to ensure form renders immediately
 			return m, m.feedbackForm.Init()
 		}
@@ -476,7 +479,7 @@ NPS Score: %d/5
 Role: %s
 Email: %s
 ---
-Version: v0.3
+Version: v%s
 OS: %s
 Timestamp: %s`,
 		usefulStr,
@@ -485,6 +488,7 @@ Timestamp: %s`,
 		m.npsScore,
 		m.role,
 		m.email,
+		version.Version,
 		osInfo,
 		timestamp,
 	)
@@ -515,5 +519,5 @@ func (m *Model) resetFeedbackForm() {
 	m.formSubmitted = false
 	m.formInteracted = false  // Reset the interaction flag
 	m.formFieldIndex = 0     // Reset field index
-	m.createFeedbackForm()
+	// Don't recreate the form - it's already bound to our fields
 }
