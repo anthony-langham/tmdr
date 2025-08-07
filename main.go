@@ -29,8 +29,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Load the acronym repository
-	repo, err := acronym.NewCSVRepository("data/acronyms.csv")
+	// Load the acronym repository from embedded data
+	repo, err := acronym.NewEmbeddedCSVRepository()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading acronym database: %v\n", err)
 		os.Exit(1)

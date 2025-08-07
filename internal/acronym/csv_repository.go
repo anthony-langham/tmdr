@@ -1,6 +1,7 @@
 package acronym
 
 import (
+	_ "embed"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -9,13 +10,64 @@ import (
 	"strings"
 )
 
+//go:embed data/acronyms.csv
+var embeddedCSV string
+
 // CSVRepository implements Repository using a CSV file
 type CSVRepository struct {
 	data map[string]Acronym
 	list []Acronym
 }
 
-// NewCSVRepository creates a new CSV-based repository
+// NewEmbeddedCSVRepository creates a new CSV-based repository from embedded data
+func NewEmbeddedCSVRepository() (*CSVRepository, error) {
+	reader := csv.NewReader(strings.NewReader(embeddedCSV))
+	reader.FieldsPerRecord = -1 // Allow variable number of fields
+	repo := &CSVRepository{
+		data: make(map[string]Acronym),
+		list: []Acronym{},
+	}
+
+	// Skip header
+	if _, err := reader.Read(); err != nil {
+		return nil, fmt.Errorf("failed to read CSV header: %w", err)
+	}
+
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to read CSV record: %w", err)
+		}
+
+		if len(record) < 2 {
+			continue
+		}
+
+		// Parse the definition to extract full form and description
+		parts := strings.SplitN(record[1], "–", 2)
+		fullForm := strings.TrimSpace(parts[0])
+		definition := ""
+		if len(parts) > 1 {
+			definition = strings.TrimSpace(parts[1])
+		}
+
+		acronym := Acronym{
+			Acronym:    strings.ToUpper(record[0]),
+			FullForm:   fullForm,
+			Definition: definition,
+		}
+
+		repo.data[strings.ToUpper(record[0])] = acronym
+		repo.list = append(repo.list, acronym)
+	}
+
+	return repo, nil
+}
+
+// NewCSVRepository creates a new CSV-based repository from a file path (for backwards compatibility)
 func NewCSVRepository(path string) (*CSVRepository, error) {
 	file, err := os.Open(path)
 	if err != nil {
