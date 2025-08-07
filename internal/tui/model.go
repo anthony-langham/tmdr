@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/anthonylangham/tmdr/internal/acronym"
+	"github.com/anthonylangham/tmdr/internal/update"
 	"github.com/anthonylangham/tmdr/internal/version"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -47,6 +48,13 @@ type Model struct {
 	formSubmitted     bool
 	formInteracted    bool  // Track if user has interacted with the form
 	formFieldIndex    int   // Track current field position
+	
+	// Update state
+	updateInfo        update.UpdateInfo
+	updateDownloading bool
+	updateProgress    float64
+	updateError       error
+	updateReady       bool
 }
 
 func NewModel(repo acronym.Repository) Model {
@@ -80,11 +88,49 @@ func NewModel(repo acronym.Repository) Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	// Request window size and start textinput blinking
+	// Request window size, start textinput blinking, and check for updates
 	return tea.Batch(
 		tea.WindowSize(),
 		textinput.Blink,
+		m.checkForUpdate(),
 	)
+}
+
+// Custom messages for update process
+type updateAvailableMsg update.UpdateInfo
+type updateProgressMsg float64
+type updateCompleteMsg string
+type updateErrorMsg error
+
+func (m Model) checkForUpdate() tea.Cmd {
+	return func() tea.Msg {
+		info := update.CheckForUpdateWithAssets()
+		return updateAvailableMsg(info)
+	}
+}
+
+func (m Model) downloadUpdate() tea.Cmd {
+	return func() tea.Msg {
+		if m.updateInfo.DownloadURL == "" {
+			return updateErrorMsg(fmt.Errorf("no download URL available"))
+		}
+
+		tempFile, err := update.DownloadUpdate(m.updateInfo.DownloadURL, func(downloaded, total int64) {
+			// Progress callback - in production would send progress messages
+		})
+		
+		if err != nil {
+			return updateErrorMsg(err)
+		}
+		
+		// Try to install the update
+		if err := update.InstallUpdate(tempFile); err != nil {
+			// If install fails, still mark as ready for manual install
+			return updateCompleteMsg(tempFile)
+		}
+		
+		return updateCompleteMsg(tempFile)
+	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -94,6 +140,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = wsMsg.Width
 		m.height = wsMsg.Height
 		// Don't return, continue processing in case we're in search mode
+	}
+	
+	// Handle update messages
+	switch msg := msg.(type) {
+	case updateAvailableMsg:
+		m.updateInfo = update.UpdateInfo(msg)
+		if m.updateInfo.Available && !m.updateDownloading && !m.updateReady {
+			// Start downloading automatically
+			m.updateDownloading = true
+			return m, m.downloadUpdate()
+		}
+		return m, nil
+		
+	case updateProgressMsg:
+		m.updateProgress = float64(msg)
+		return m, nil
+		
+	case updateCompleteMsg:
+		m.updateDownloading = false
+		m.updateReady = true
+		return m, nil
+		
+	case updateErrorMsg:
+		m.updateDownloading = false
+		m.updateError = msg
+		return m, nil
 	}
 	
 	// Handle StateFeedback for ALL message types (not just KeyMsg)

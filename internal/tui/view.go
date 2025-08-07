@@ -12,6 +12,34 @@ func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Initializing..."
 	}
+	
+	// Build update notification if applicable
+	var updateNotification string
+	if m.updateReady {
+		updateNotification = lipgloss.NewStyle().
+			Background(lipgloss.Color("#00AA00")).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Padding(0, 1).
+			Width(m.width).
+			Align(lipgloss.Center).
+			Render(fmt.Sprintf("✨ tmdr v%s downloaded! Restart to apply update", m.updateInfo.Version))
+	} else if m.updateDownloading {
+		updateNotification = lipgloss.NewStyle().
+			Background(lipgloss.Color("#FF6600")).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Padding(0, 1).
+			Width(m.width).
+			Align(lipgloss.Center).
+			Render(fmt.Sprintf("⬇️ Downloading tmdr v%s...", m.updateInfo.Version))
+	} else if m.updateInfo.Available && m.updateError == nil {
+		updateNotification = lipgloss.NewStyle().
+			Background(lipgloss.Color("#0066CC")).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Padding(0, 1).
+			Width(m.width).
+			Align(lipgloss.Center).
+			Render(fmt.Sprintf("🆕 tmdr v%s is available!", m.updateInfo.Version))
+	}
 
 	// Check minimum terminal size
 	minWidth := 50
@@ -65,10 +93,17 @@ func (m Model) View() string {
 		Render(fullView)
 
 	// Wrap in full screen style to ensure dark background fills entire terminal
-	return fullScreenStyle.
+	finalView := fullScreenStyle.
 		Width(m.width).
 		Height(m.height).
 		Render(containerView)
+	
+	// Add update notification at the top if present
+	if updateNotification != "" {
+		return lipgloss.JoinVertical(lipgloss.Top, updateNotification, finalView)
+	}
+	
+	return finalView
 }
 
 func (m Model) viewHome() string {
