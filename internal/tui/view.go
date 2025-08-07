@@ -118,7 +118,11 @@ func (m Model) viewBrowse() string {
 	var listBuilder strings.Builder
 	
 	// Calculate available height for list (accounting for borders, nav, details)
-	availableHeight := m.height - 8 // Reserve space for nav, borders, and details
+	// Cap at 10 results for better UX and to prevent navbar issues
+	availableHeight := 10
+	if m.height-8 < availableHeight {
+		availableHeight = m.height - 8
+	}
 	if availableHeight < 3 {
 		availableHeight = 3
 	}
@@ -187,7 +191,11 @@ func (m Model) viewSearch() string {
 		results.WriteString("\nResults:\n")
 		
 		// Calculate available height for results
-		availableHeight := m.height - 7 // Reserve space for search box, help, borders
+		// Cap at 10 results for better UX and to prevent navbar issues
+		availableHeight := 10
+		if m.height-7 < availableHeight {
+			availableHeight = m.height - 7
+		}
 		if availableHeight < 2 {
 			availableHeight = 2
 		}
