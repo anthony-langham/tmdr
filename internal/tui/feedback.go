@@ -94,11 +94,18 @@ func (f *FeedbackForm) Init() tea.Cmd {
 func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle ESC first, before text input can consume it
+		if msg.String() == "esc" {
+			// ESC should always be handled by parent, not consumed here
+			return f, nil
+		}
+		
 		switch msg.String() {
 		case "up", "shift+tab":
 			if f.currentField > 0 {
 				// Blur current field if it's text input
 				if !f.fields[f.currentField].isSelect {
+					f.fields[f.currentField].value = f.fields[f.currentField].input.Value()
 					f.fields[f.currentField].input.Blur()
 				}
 				f.currentField--
@@ -107,11 +114,13 @@ func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 					return f, f.fields[f.currentField].input.Focus()
 				}
 			}
+			return f, nil
 			
 		case "down", "tab":
 			if f.currentField < len(f.fields)-1 {
-				// Blur current field if it's text input
+				// Save value if text input before moving
 				if !f.fields[f.currentField].isSelect {
+					f.fields[f.currentField].value = f.fields[f.currentField].input.Value()
 					f.fields[f.currentField].input.Blur()
 				}
 				f.currentField++
@@ -120,6 +129,7 @@ func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 					return f, f.fields[f.currentField].input.Focus()
 				}
 			}
+			return f, nil
 			
 		case "left":
 			// For select fields, go to previous option
@@ -136,6 +146,7 @@ func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 					field.value = field.options[currentIndex-1]
 				}
 			}
+			return f, nil
 			
 		case "right":
 			// For select fields, go to next option
@@ -152,12 +163,15 @@ func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 					field.value = field.options[currentIndex+1]
 				}
 			}
+			return f, nil
 			
 		case "enter":
-			// If on last field or any field, submit the form
+			// If on last field, submit the form
 			if f.currentField == len(f.fields)-1 {
 				// Save email value from input
-				f.fields[f.currentField].value = f.fields[f.currentField].input.Value()
+				if !f.fields[f.currentField].isSelect {
+					f.fields[f.currentField].value = f.fields[f.currentField].input.Value()
+				}
 				f.submitted = true
 				return f, nil
 			}
@@ -173,10 +187,19 @@ func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 					return f, f.fields[f.currentField].input.Focus()
 				}
 			}
+			return f, nil
+			
+		default:
+			// For text input fields, pass through other keys
+			if !f.fields[f.currentField].isSelect {
+				var cmd tea.Cmd
+				f.fields[f.currentField].input, cmd = f.fields[f.currentField].input.Update(msg)
+				return f, cmd
+			}
 		}
 	}
 	
-	// Update text input if current field is text
+	// Update text input for non-key messages (like tick for cursor blink)
 	if !f.fields[f.currentField].isSelect {
 		var cmd tea.Cmd
 		f.fields[f.currentField].input, cmd = f.fields[f.currentField].input.Update(msg)
