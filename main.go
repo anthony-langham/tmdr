@@ -67,8 +67,20 @@ func main() {
 	acronymStr := strings.ToUpper(flag.Arg(0))
 	a, err := repo.Find(acronymStr)
 	if err != nil {
-		fmt.Printf("Acronym '%s' not found.\n", acronymStr)
-		fmt.Println("Try 'tmdr --help' for usage information.")
+		// Try fuzzy matching
+		fuzzyMatches, fuzzyErr := repo.FindFuzzy(flag.Arg(0), 3)
+		if fuzzyErr != nil {
+			fmt.Printf("Acronym '%s' not found.\n", flag.Arg(0))
+			fmt.Println("Try 'tmdr --help' for usage information.")
+			os.Exit(1)
+		}
+		
+		// Show fuzzy match suggestions
+		fmt.Printf("'%s' not found. Did you mean:\n", flag.Arg(0))
+		for _, match := range fuzzyMatches {
+			fmt.Printf("  %s → %s\n", match.Acronym, match.FullForm)
+		}
+		fmt.Println("\nTry one of the suggestions above or 'tmdr --help' for usage.")
 		os.Exit(1)
 	}
 	
