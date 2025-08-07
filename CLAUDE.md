@@ -8,14 +8,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status
 
-This is a new project in early development stage. Current repository structure:
-- README.md with project vision and features placeholder
-- LICENSE (MIT)
-- .gitignore configured for Go projects
-- .claude/ directory with:
-  - docs/ containing PRD and detailed README
-  - plans/ with versioned implementation plans
-  - TODO.md with 36 actionable tasks
+This project is actively being developed. Current features implemented:
+- ✅ Interactive Terminal UI with BubbleTea framework
+- ✅ Search-as-you-type functionality with fuzzy matching
+- ✅ Browse all acronyms with navigation
+- ✅ Product-Market Fit feedback form with Huh forms
+- ✅ Orange-themed UI consistent with tmdr branding
+- ✅ ESC key navigation with proper back/exit behavior
+- ✅ Mailto-based feedback submission (zero infrastructure)
 
 ## Technology Stack
 
@@ -71,18 +71,29 @@ ABG,Arterial Blood Gas – A test measuring oxygen and CO2 levels.
 HIV,Human Immunodeficiency Virus – A virus that attacks the immune system.
 ```
 
-## Commands (Once Implemented)
+## Commands
 
 ```bash
-# Basic lookup
-tmdr abg
+# Launch interactive TUI (default)
+tmdr
 
-# Random acronym for learning
-tmdr --random
+# Navigation in TUI
+- Press 's' to search for acronyms
+- Press 'b' to browse all acronyms  
+- Press 'f' to provide feedback
+- Press 'h' or 't' to return home
+- Press 'q' or Ctrl+C to quit
+- ESC key: context-aware back/exit
 
-# Daily acronym
-tmdr --daily
+# Search mode
+- Type to search in real-time
+- Arrow keys to navigate results
+- Enter to select
+- ESC to clear search or exit
 
-# Interactive TUI mode (v0.2+)
-tmdr --interactive
+# Feedback form
+- Navigate questions with Tab/Shift+Tab
+- Select answers with Enter/Space
+- ESC to go back (exits at first question)
+- Form submits via mailto to hello@tmdr.sh
 ```

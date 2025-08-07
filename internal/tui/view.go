@@ -243,19 +243,45 @@ func (m Model) viewSearch() string {
 }
 
 func (m Model) viewFeedback() string {
-	title := titleStyle.Render("📝  Send Feedback")
-
+	if m.formSubmitted {
+		// Show success message briefly
+		title := titleStyle.Render("✅  Thank You!")
+		content := lipgloss.JoinVertical(
+			lipgloss.Center,
+			"",
+			title,
+			"",
+			"Your feedback has been prepared in your email client.",
+			"",
+			"Returning to home...",
+		)
+		
+		return contentStyle.
+			Width(m.width - 4).
+			Height(m.height - 6).
+			Align(lipgloss.Center).
+			Render(content)
+	}
+	
+	// Show the feedback form directly
+	// Get the form view
+	formView := ""
+	if m.feedbackForm != nil {
+		formView = m.feedbackForm.View()
+	}
+	
+	help := helpStyle.Render("Navigate with ↑↓ • Select with Enter • Press ESC to go back")
+	
 	content := lipgloss.JoinVertical(
-		lipgloss.Center,
+		lipgloss.Left,
 		"",
-		title,
+		formView,
 		"",
-		"Found a missing acronym? Have a suggestion?",
+		help,
 	)
 
 	return contentStyle.
 		Width(m.width - 4).
 		Height(m.height - 6).
-		Align(lipgloss.Center).
 		Render(content)
 }
