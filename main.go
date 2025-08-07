@@ -7,15 +7,19 @@ import (
 	"strings"
 	
 	"github.com/anthonylangham/tmdr/internal/acronym"
+	"github.com/anthonylangham/tmdr/internal/tui"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 const version = "0.1.0"
 
 func main() {
 	var (
-		versionFlag = flag.Bool("version", false, "Show version information")
-		helpFlag    = flag.Bool("help", false, "Show help information")
-		randomFlag  = flag.Bool("random", false, "Display a random acronym")
+		versionFlag     = flag.Bool("version", false, "Show version information")
+		helpFlag        = flag.Bool("help", false, "Show help information")
+		randomFlag      = flag.Bool("random", false, "Display a random acronym")
+		interactiveFlag = flag.Bool("interactive", false, "Launch interactive TUI mode")
+		iFlag           = flag.Bool("i", false, "Launch interactive TUI mode (shorthand)")
 	)
 
 	flag.Parse()
@@ -25,16 +29,28 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *helpFlag || (flag.NArg() == 0 && !*randomFlag) {
-		printHelp()
-		os.Exit(0)
-	}
-
 	// Load the acronym repository
 	repo, err := acronym.NewCSVRepository("data/acronyms.csv")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading acronym database: %v\n", err)
 		os.Exit(1)
+	}
+
+	// Launch interactive TUI mode if requested or no arguments provided
+	if *interactiveFlag || *iFlag || (flag.NArg() == 0 && !*randomFlag && !*helpFlag && !*versionFlag) {
+		model := tui.NewModel(repo)
+		program := tea.NewProgram(model, tea.WithAltScreen())
+		
+		if _, err := program.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error running TUI: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	if *helpFlag {
+		printHelp()
+		os.Exit(0)
 	}
 
 	if *randomFlag {
@@ -70,12 +86,15 @@ func printHelp() {
 	fmt.Println("tmdr - Too Medical; Didn't Read")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  tmdr <acronym>     Look up a medical acronym")
-	fmt.Println("  tmdr --random      Display a random acronym")
-	fmt.Println("  tmdr --version     Show version information")
-	fmt.Println("  tmdr --help        Show this help message")
+	fmt.Println("  tmdr <acronym>         Look up a medical acronym")
+	fmt.Println("  tmdr --random          Display a random acronym")
+	fmt.Println("  tmdr --interactive     Launch interactive TUI mode")
+	fmt.Println("  tmdr -i                Launch interactive TUI mode (shorthand)")
+	fmt.Println("  tmdr --version         Show version information")
+	fmt.Println("  tmdr --help            Show this help message")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  tmdr abg           Look up ABG (Arterial Blood Gas)")
-	fmt.Println("  tmdr hiv           Look up HIV (Human Immunodeficiency Virus)")
+	fmt.Println("  tmdr abg               Look up ABG (Arterial Blood Gas)")
+	fmt.Println("  tmdr hiv               Look up HIV (Human Immunodeficiency Virus)")
+	fmt.Println("  tmdr --interactive     Browse acronyms interactively")
 }
