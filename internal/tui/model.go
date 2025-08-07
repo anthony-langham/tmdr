@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"runtime"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/anthonylangham/tmdr/internal/version"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pkg/browser"
 )
@@ -37,17 +37,18 @@ type Model struct {
 	height       int
 	err          error
 	
-	// Feedback form fields
-	feedbackForm      *huh.Form
+	// Feedback form
+	feedbackForm      *FeedbackForm
+	// Legacy Huh form fields (to be removed)
+	formFieldIndex    int
+	formInteracted    bool
+	formSubmitted     bool
 	useful            bool
 	usage             string
 	wouldUseAgain     string
 	npsScore          int
 	role              string
 	email             string
-	formSubmitted     bool
-	formInteracted    bool  // Track if user has interacted with the form
-	formFieldIndex    int   // Track current field position
 	
 	// Update state
 	updateInfo        update.UpdateInfo
@@ -73,16 +74,13 @@ func NewModel(repo acronym.Repository) Model {
 	ti.Cursor.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6600"))
 	
 	m := Model{
-		state:       StateHome,
-		repo:        repo,
-		acronyms:    acronyms,
-		filtered:    acronyms,
-		searchInput: ti,
-		npsScore:    3, // Default to middle score
+		state:         StateHome,
+		repo:          repo,
+		acronyms:      acronyms,
+		filtered:      acronyms,
+		searchInput:   ti,
+		feedbackForm:  NewFeedbackForm(),
 	}
-	
-	// Initialize the feedback form
-	m.createFeedbackForm()
 	
 	return m
 }
@@ -168,71 +166,87 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	
-	// Handle StateFeedback for ALL message types (not just KeyMsg)
-	// This ensures form renders on initial load and gets all necessary updates
+	// Handle StateFeedback with custom form
 	if m.state == StateFeedback {
-		// Intercept ESC and handle it specially
-		if keyMsg, ok := msg.(tea.KeyMsg); ok {
-			if keyMsg.String() == "esc" {
-				// If we're at field index 0 (first question), exit to home
-				if m.formFieldIndex == 0 {
-					m.state = StateHome
-					m.resetFeedbackForm()
-					return m, nil
-				}
-				
-				// Otherwise try to go back with Shift+Tab
-				prevFieldMsg := tea.KeyMsg{
-					Type: tea.KeyShiftTab,
-					Runes: []rune{},
-					Alt: false,
-				}
-				
-				// Navigate back and decrement field index
-				form, cmd := m.feedbackForm.Update(prevFieldMsg)
-				if f, ok := form.(*huh.Form); ok {
-					m.feedbackForm = f
-					if m.formFieldIndex > 0 {
-						m.formFieldIndex--
-					}
-				}
-				return m, cmd
-			}
-			
-			// Track forward navigation
-			if keyMsg.String() == "enter" || keyMsg.String() == "tab" {
-				m.formInteracted = true
-				// Increment field index when moving forward
-				m.formFieldIndex++
-			} else if keyMsg.String() == "shift+tab" {
-				// Decrement field index when moving backward
-				if m.formFieldIndex > 0 {
-					m.formFieldIndex--
-				}
-			}
+		// Handle ESC key specially
+		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
+			m.state = StateHome
+			m.feedbackForm.Reset()
+			return m, nil
 		}
 		
-		// Update form with the original message (if not ESC)
-		form, cmd := m.feedbackForm.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.feedbackForm = f
+		// Update custom feedback form
+		updatedForm, cmd := m.feedbackForm.Update(msg)
+		m.feedbackForm = updatedForm
+		
+		// Check if form is submitted
+		if m.feedbackForm.IsSubmitted() {
+			// Get values from custom form
+			values := m.feedbackForm.GetValues()
 			
-			// Check if form is completed
-			if m.feedbackForm.State == huh.StateCompleted {
-				m.submitFeedback()
-				// Return to home after submission
-				m.state = StateHome
-				m.resetFeedbackForm() // Reset form after submission
-				return m, nil
+			// Map values to model fields for email formatting
+			m.useful = values["useful"] == "Yes"
+			
+			// Map usage values
+			switch values["usage"] {
+			case "First time":
+				m.usage = "first"
+			case "2-5 times":
+				m.usage = "2-5"
+			case "6+ times":
+				m.usage = "6+"
 			}
 			
-			// Check if form was aborted
-			if m.feedbackForm.State == huh.StateAborted {
-				// User explicitly aborted the form
-				m.state = StateHome
-				m.resetFeedbackForm()
-				return m, nil
+			// Map would use again values
+			switch values["wouldUseAgain"] {
+			case "Definitely":
+				m.wouldUseAgain = "definitely"
+			case "Probably":
+				m.wouldUseAgain = "probably"
+			case "Maybe":
+				m.wouldUseAgain = "maybe"
+			case "No":
+				m.wouldUseAgain = "no"
 			}
+			
+			// Map NPS score
+			switch values["npsScore"] {
+			case "1 - Not at all":
+				m.npsScore = 1
+			case "2":
+				m.npsScore = 2
+			case "3":
+				m.npsScore = 3
+			case "4":
+				m.npsScore = 4
+			case "5 - Extremely likely":
+				m.npsScore = 5
+			}
+			
+			// Map role
+			switch values["role"] {
+			case "Engineer":
+				m.role = "engineer"
+			case "DevOps":
+				m.role = "devops"
+			case "Data Scientist":
+				m.role = "data_scientist"
+			case "Healthcare":
+				m.role = "healthcare"
+			case "Other":
+				m.role = "other"
+			}
+			
+			// Email is direct
+			m.email = values["email"]
+			
+			// Submit feedback
+			m.submitFeedback()
+			
+			// Return to home after submission
+			m.state = StateHome
+			m.feedbackForm.Reset()
+			return m, nil
 		}
 		
 		return m, cmd
@@ -358,10 +372,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "f":
 			m.state = StateFeedback
-			// Reset field index when entering feedback
-			m.formFieldIndex = 0
-			m.formInteracted = false
-			// Send an Init command to ensure form renders immediately
+			// Reset the custom form
+			m.feedbackForm.Reset()
+			// Initialize the form
 			return m, m.feedbackForm.Init()
 		}
 
@@ -441,98 +454,6 @@ func toUpper(c byte) byte {
 	return c
 }
 
-func (m *Model) createFeedbackForm() {
-	// Create a custom theme with orange for focused elements
-	theme := huh.ThemeBase()
-	
-	// Orange color for selections and focus
-	orange := lipgloss.Color("#FF6600")
-	
-	// Customize focused state
-	theme.Focused.SelectedPrefix = lipgloss.NewStyle().Foreground(orange).SetString("▸ ")
-	theme.Focused.UnselectedPrefix = lipgloss.NewStyle().SetString("  ")
-	
-	// Style for Yes/No buttons in Confirm
-	theme.Focused.FocusedButton = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFFFF")).
-		Background(orange).
-		Padding(0, 2).
-		Bold(true)
-	theme.Focused.BlurredButton = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#999999")).
-		Padding(0, 2)
-	
-	// Additional styling
-	theme.Focused.TextInput.Cursor = lipgloss.NewStyle().Foreground(orange).Background(orange)
-	theme.Focused.Title = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFFFFF"))
-	theme.Focused.SelectedOption = lipgloss.NewStyle().Foreground(orange)
-	theme.Focused.UnselectedOption = lipgloss.NewStyle().Foreground(lipgloss.Color("#AAAAAA"))
-	
-	// Also set the cursor/prompt for input fields
-	theme.Focused.TextInput.Prompt = lipgloss.NewStyle().Foreground(orange)
-	theme.Focused.TextInput.Text = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
-	
-	m.feedbackForm = huh.NewForm(
-		// Group 1: Basic feedback questions
-		huh.NewGroup(
-			huh.NewConfirm().
-				Title("Was tmdr useful?").
-				Value(&m.useful).
-				Affirmative("Yes").
-				Negative("No"),
-
-			huh.NewSelect[string]().
-				Title("How many times have you used tmdr?").
-				Options(
-					huh.NewOption("First time", "first"),
-					huh.NewOption("2-5 times", "2-5"),
-					huh.NewOption("6+ times", "6+"),
-				).
-				Value(&m.usage),
-
-			huh.NewSelect[string]().
-				Title("Would you use tmdr again?").
-				Options(
-					huh.NewOption("Definitely", "definitely"),
-					huh.NewOption("Probably", "probably"),
-					huh.NewOption("Maybe", "maybe"),
-					huh.NewOption("No", "no"),
-				).
-				Value(&m.wouldUseAgain),
-		),
-		
-		// Group 2: NPS and demographics
-		huh.NewGroup(
-			huh.NewSelect[int]().
-				Title("How likely are you to recommend tmdr? (1-5)").
-				Options(
-					huh.NewOption("1 - Not at all likely", 1),
-					huh.NewOption("2", 2),
-					huh.NewOption("3", 3),
-					huh.NewOption("4", 4),
-					huh.NewOption("5 - Extremely likely", 5),
-				).
-				Value(&m.npsScore).
-				Height(7), // Limit height for scrollable list
-
-			huh.NewSelect[string]().
-				Title("What's your role?").
-				Options(
-					huh.NewOption("Engineer", "engineer"),
-					huh.NewOption("DevOps", "devops"),
-					huh.NewOption("Data Scientist", "data_scientist"),
-					huh.NewOption("Healthcare Professional", "healthcare"),
-					huh.NewOption("Other", "other"),
-				).
-				Value(&m.role),
-
-			huh.NewInput().
-				Title("Email for updates (optional)").
-				Value(&m.email).
-				Placeholder("your@email.com"),
-		),
-	).WithWidth(60).WithShowHelp(false).WithShowErrors(true).WithTheme(theme)
-}
 
 func (m *Model) formatFeedbackEmail() string {
 	usefulStr := "No"
@@ -569,6 +490,16 @@ Timestamp: %s`,
 }
 
 func (m *Model) submitFeedback() {
+	// Debug: Print values to stderr to see what we have
+	fmt.Fprintf(os.Stderr, "\n=== DEBUG FEEDBACK VALUES ===\n")
+	fmt.Fprintf(os.Stderr, "useful: %v\n", m.useful)
+	fmt.Fprintf(os.Stderr, "usage: %s\n", m.usage) 
+	fmt.Fprintf(os.Stderr, "wouldUseAgain: %s\n", m.wouldUseAgain)
+	fmt.Fprintf(os.Stderr, "npsScore: %d\n", m.npsScore)
+	fmt.Fprintf(os.Stderr, "role: %s\n", m.role)
+	fmt.Fprintf(os.Stderr, "email: %s\n", m.email)
+	fmt.Fprintf(os.Stderr, "=============================\n\n")
+	
 	body := m.formatFeedbackEmail()
 	encodedBody := url.QueryEscape(body)
 	subject := url.QueryEscape("TMDR Product Feedback")
@@ -582,6 +513,7 @@ func (m *Model) submitFeedback() {
 }
 
 func (m *Model) resetFeedbackForm() {
+	// Reset legacy form values
 	m.useful = false
 	m.usage = ""
 	m.wouldUseAgain = ""
@@ -589,7 +521,10 @@ func (m *Model) resetFeedbackForm() {
 	m.role = ""
 	m.email = ""
 	m.formSubmitted = false
-	m.formInteracted = false  // Reset the interaction flag
-	m.formFieldIndex = 0     // Reset field index
-	// Don't recreate the form - it's already bound to our fields
+	m.formInteracted = false
+	m.formFieldIndex = 0
+	// Reset custom form
+	if m.feedbackForm != nil {
+		m.feedbackForm.Reset()
+	}
 }
