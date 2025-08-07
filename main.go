@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	
+	"github.com/anthonylangham/tmdr/internal/acronym"
 )
 
 const version = "0.1.0"
@@ -28,13 +30,40 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Load the acronym repository
+	repo, err := acronym.NewCSVRepository("data/acronyms.csv")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading acronym database: %v\n", err)
+		os.Exit(1)
+	}
+
 	if *randomFlag {
-		fmt.Println("Random mode: Coming soon!")
+		a, err := repo.Random()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error getting random acronym: %v\n", err)
+			os.Exit(1)
+		}
+		printAcronym(a)
 		os.Exit(0)
 	}
 
-	acronym := strings.ToUpper(flag.Arg(0))
-	fmt.Printf("Looking up: %s (Coming soon!)\n", acronym)
+	// Look up the provided acronym (case-insensitive)
+	acronymStr := strings.ToUpper(flag.Arg(0))
+	a, err := repo.Find(acronymStr)
+	if err != nil {
+		fmt.Printf("Acronym '%s' not found.\n", acronymStr)
+		fmt.Println("Try 'tmdr --help' for usage information.")
+		os.Exit(1)
+	}
+	
+	printAcronym(a)
+}
+
+func printAcronym(a *acronym.Acronym) {
+	fmt.Printf("%s → %s\n", a.Acronym, a.FullForm)
+	if a.Definition != "" {
+		fmt.Println(a.Definition)
+	}
 }
 
 func printHelp() {

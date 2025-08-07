@@ -24,6 +24,7 @@ func NewCSVRepository(path string) (*CSVRepository, error) {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
+	reader.FieldsPerRecord = -1 // Allow variable number of fields
 	repo := &CSVRepository{
 		data: make(map[string]Acronym),
 		list: []Acronym{},
