@@ -162,7 +162,7 @@ func (m Model) viewBrowse() string {
 		
 		details = lipgloss.JoinVertical(
 			lipgloss.Left,
-			strings.Repeat("─", m.width-6),
+			strings.Repeat("─", 60),
 			acronymLine,
 			definition,
 		)
@@ -232,7 +232,7 @@ func (m Model) viewSearch() string {
 		searchLine,
 		results.String(),
 		"",
-		strings.Repeat("─", m.width-6),
+		strings.Repeat("─", 60),
 		help,
 	)
 
@@ -251,12 +251,6 @@ func (m Model) viewFeedback() string {
 		title,
 		"",
 		"Found a missing acronym? Have a suggestion?",
-		"Visit: github.com/anthonylangham/tmdr/issues",
-		"",
-		"Or press Enter to open in your browser",
-		"",
-		strings.Repeat("─", m.width-6),
-		helpStyle.Render("Press any other key to go back"),
 	)
 
 	return contentStyle.
