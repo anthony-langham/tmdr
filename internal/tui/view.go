@@ -12,8 +12,30 @@ func (m Model) View() string {
 		return "Initializing..."
 	}
 
+	// Check minimum terminal size
+	minWidth := 50
+	minHeight := 16
+	
+	if m.width < minWidth || m.height < minHeight {
+		msg := fmt.Sprintf("Terminal too small!\n\nMinimum size: %dx%d\nCurrent size: %dx%d\n\nPlease resize your terminal.",
+			minWidth, minHeight, m.width, m.height)
+		return fullScreenStyle.
+			Width(m.width).
+			Height(m.height).
+			Align(lipgloss.Center, lipgloss.Center).
+			Render(msg)
+	}
+
 	// Build the navigation bar
-	navBar := renderNavBar()
+	navContent := renderNavBar()
+	navBar := lipgloss.NewStyle().
+		Width(m.width - 2).
+		Background(bgColor).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderBottom(true).
+		BorderForeground(lipgloss.Color("#888888")).
+		Padding(0, 1).
+		Render(navContent)
 
 	// Build the content based on state
 	var content string
@@ -24,8 +46,6 @@ func (m Model) View() string {
 		content = m.viewBrowse()
 	case StateSearch:
 		content = m.viewSearch()
-	case StateRandom:
-		content = m.viewRandom()
 	case StateFeedback:
 		content = m.viewFeedback()
 	}
@@ -37,41 +57,56 @@ func (m Model) View() string {
 		content,
 	)
 
-	// Apply container styling
-	return containerStyle.
+	// Apply container styling with full dark background
+	containerView := containerStyle.
 		Width(m.width - 2).
 		Height(m.height - 2).
 		Render(fullView)
+
+	// Wrap in full screen style to ensure dark background fills entire terminal
+	return fullScreenStyle.
+		Width(m.width).
+		Height(m.height).
+		Render(containerView)
 }
 
 func (m Model) viewHome() string {
-	title := titleStyle.Render("🩺  Welcome to tmdr")
-	subtitle := subtitleStyle.Render("Too Medical; Didn't Read.")
-	tagline := subtitleStyle.Render("Your terminal-native tool for instant medical acronym help.")
-
-	instructions := []string{
-		"📖  Quick Start:",
-		"    • Press 's' to search for an acronym",
-		"    • Press 'r' for a random medical term",
-		"    • Press 'b' to browse all acronyms",
-		"    • Press 'f' to send feedback",
+	title := titleStyle.Render("Too Medical; Didn't Read.")
+	subtitle := subtitleStyle.Render("Your terminal-native tool for instant medical acronym help.")
+	
+	// Adjust content based on available height
+	var content string
+	if m.height > 20 {
+		// Full version for larger terminals
+		instructions := []string{
+			"📖  Quick Start:",
+			"    • Press 's' to search for an acronym",
+			"    • Press 'b' to browse all acronyms",
+			"    • Press 'f' to send feedback",
+			"    • Press 'h' or 't' to return home",
+		}
+		dataInfo := fmt.Sprintf("💾  Data version: v0.1  |  Acronyms: %d", len(m.acronyms))
+		
+		content = lipgloss.JoinVertical(
+			lipgloss.Center,
+			"",
+			title,
+			subtitle,
+			"",
+			strings.Join(instructions, "\n"),
+			"",
+			dataInfo,
+		)
+	} else {
+		// Compact version for smaller terminals
+		shortcuts := "s: search | b: browse | f: feedback"
+		content = lipgloss.JoinVertical(
+			lipgloss.Center,
+			title,
+			"",
+			shortcuts,
+		)
 	}
-
-	dataInfo := fmt.Sprintf("💾  Data version: v0.1  |  Acronyms loaded: %d", len(m.acronyms))
-
-	content := lipgloss.JoinVertical(
-		lipgloss.Center,
-		"",
-		title,
-		"",
-		subtitle,
-		tagline,
-		"",
-		strings.Join(instructions, "\n"),
-		"",
-		"",
-		dataInfo,
-	)
 
 	return contentStyle.
 		Width(m.width - 4).
@@ -82,12 +117,18 @@ func (m Model) viewHome() string {
 func (m Model) viewBrowse() string {
 	var listBuilder strings.Builder
 	
+	// Calculate available height for list (accounting for borders, nav, details)
+	availableHeight := m.height - 8 // Reserve space for nav, borders, and details
+	if availableHeight < 3 {
+		availableHeight = 3
+	}
+	
 	// Display list of acronyms
 	start := 0
-	if m.cursor > 5 {
-		start = m.cursor - 5
+	if m.cursor > availableHeight/2 {
+		start = m.cursor - availableHeight/2
 	}
-	end := start + 10
+	end := start + availableHeight
 	if end > len(m.filtered) {
 		end = len(m.filtered)
 	}
@@ -138,14 +179,20 @@ func (m Model) viewBrowse() string {
 }
 
 func (m Model) viewSearch() string {
-	searchLine := searchPromptStyle.Render("Search: ") + 
-		searchInputStyle.Render(m.searchQuery) + "_"
+	// Use the textinput component with blinking cursor
+	searchLine := searchPromptStyle.Render("Search: ") + m.searchInput.View()
 
 	var results strings.Builder
-	if m.searchQuery != "" {
+	if m.searchInput.Value() != "" {
 		results.WriteString("\nResults:\n")
 		
-		displayCount := 8
+		// Calculate available height for results
+		availableHeight := m.height - 7 // Reserve space for search box, help, borders
+		if availableHeight < 2 {
+			availableHeight = 2
+		}
+		
+		displayCount := availableHeight
 		if len(m.filtered) < displayCount {
 			displayCount = len(m.filtered)
 		}
@@ -184,40 +231,6 @@ func (m Model) viewSearch() string {
 	return contentStyle.
 		Width(m.width - 4).
 		Height(m.height - 6).
-		Render(content)
-}
-
-func (m Model) viewRandom() string {
-	title := titleStyle.Render("🎲  Random Medical Acronym")
-
-	var content string
-	if m.selected != nil {
-		acronymLine := fmt.Sprintf("%s → %s",
-			acronymStyle.Render(m.selected.Acronym),
-			fullFormStyle.Render(m.selected.FullForm))
-
-		definition := definitionStyle.Width(m.width - 8).Render(m.selected.Definition)
-
-		content = lipgloss.JoinVertical(
-			lipgloss.Center,
-			"",
-			title,
-			"",
-			acronymLine,
-			"",
-			definition,
-			"",
-			strings.Repeat("─", m.width-6),
-			helpStyle.Render("Press 'r' for another random acronym"),
-		)
-	} else {
-		content = errorStyle.Render("Error loading random acronym")
-	}
-
-	return contentStyle.
-		Width(m.width - 4).
-		Height(m.height - 6).
-		Align(lipgloss.Center).
 		Render(content)
 }
 

@@ -16,11 +16,17 @@ var (
 			Background(bgColor).
 			Foreground(primaryColor)
 
+	// Full screen style to enforce dark background
+	fullScreenStyle = lipgloss.NewStyle().
+			Background(bgColor).
+			Foreground(primaryColor)
+
 	// Navigation bar styles
 	navBarStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderBottom(true).
 			BorderForeground(secondaryColor).
+			Background(bgColor).
 			Padding(0, 1)
 
 	navItemStyle = lipgloss.NewStyle().
@@ -33,6 +39,7 @@ var (
 
 	// Content area styles
 	contentStyle = lipgloss.NewStyle().
+			Background(bgColor).
 			Padding(1, 2)
 
 	// Title styles
@@ -77,7 +84,8 @@ var (
 	// Border styles for main container
 	containerStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(secondaryColor)
+			BorderForeground(secondaryColor).
+			Background(bgColor)
 
 	// Help text style
 	helpStyle = lipgloss.NewStyle().
@@ -92,23 +100,31 @@ var (
 func renderNavBar() string {
 	// Special style for "tmdr" with orange and bold
 	tmdrStyle := lipgloss.NewStyle().
-		Padding(0, 1).
 		Foreground(accentColor).
+		Background(bgColor).
 		Bold(true)
 	
-	items := []string{
-		tmdrStyle.Render("tmdr"),
-		navItemStyle.Render("s search"),
-		navItemStyle.Render("r random"),
-		navItemStyle.Render("b browse"),
-		navItemStyle.Render("f feedback"),
-		navItemStyle.Render("q quit"),
-	}
+	// Style for keyboard shortcuts - bold and prominent
+	keyStyle := lipgloss.NewStyle().
+		Foreground(primaryColor).
+		Background(bgColor).
+		Bold(true)
+	
+	// Style for labels - smaller, not bold
+	labelStyle := lipgloss.NewStyle().
+		Foreground(secondaryColor).
+		Background(bgColor)
+	
+	separatorStyle := lipgloss.NewStyle().
+		Foreground(secondaryColor).
+		Background(bgColor)
+	
+	// Build navigation items with bold keys and lighter labels
+	nav := tmdrStyle.Render("tmdr") +
+		separatorStyle.Render(" │ ") + keyStyle.Render("s") + labelStyle.Render(" search") +
+		separatorStyle.Render(" │ ") + keyStyle.Render("b") + labelStyle.Render(" browse") +
+		separatorStyle.Render(" │ ") + keyStyle.Render("f") + labelStyle.Render(" feedback") +
+		separatorStyle.Render(" │ ") + keyStyle.Render("q") + labelStyle.Render(" quit")
 
-	bar := items[0]
-	for i := 1; i < len(items); i++ {
-		bar += navSeparatorStyle.Render("│") + items[i]
-	}
-
-	return navBarStyle.Render(bar)
+	return nav
 }
