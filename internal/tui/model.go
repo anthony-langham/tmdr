@@ -476,7 +476,7 @@ NPS Score: %d/5
 Role: %s
 Email: %s
 ---
-Version: v0.1
+Version: v0.3
 OS: %s
 Timestamp: %s`,
 		usefulStr,

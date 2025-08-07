@@ -71,7 +71,7 @@ func (m Model) View() string {
 }
 
 func (m Model) viewHome() string {
-	title := titleStyle.Render("Too Medical; Didn't Read.")
+	title := titleStyle.Render("too medical; didn't read")
 	subtitle := subtitleStyle.Render("Your terminal-native tool for instant medical acronym help.")
 	
 	// Adjust content based on available height
@@ -85,7 +85,7 @@ func (m Model) viewHome() string {
 			"    • Press 'f' to send feedback",
 			"    • Press 'h' or 't' to return home",
 		}
-		dataInfo := fmt.Sprintf("💾  Data version: v0.1  |  Acronyms: %d", len(m.acronyms))
+		dataInfo := "⚙️  version: v0.3"
 		
 		content = lipgloss.JoinVertical(
 			lipgloss.Center,

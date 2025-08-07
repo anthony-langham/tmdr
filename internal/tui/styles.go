@@ -45,7 +45,7 @@ var (
 	// Title styles
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(primaryColor).
+			Foreground(accentColor).  // Orange color for title
 			Align(lipgloss.Center)
 
 	subtitleStyle = lipgloss.NewStyle().
