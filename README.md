@@ -17,13 +17,13 @@ tmdr  # Launch interactive mode (default)
 
 Navigate with ease:
 - **`s`** - Search acronyms in real-time
-- **`b`** - Browse all 107 acronyms
+- **`b`** - Browse all acronyms
 - **`f`** - Send feedback
 - **`q`** - Quit
 
 ## Features
 
-- ⚡ **Instant lookup** - 107 medical acronyms available offline
+- ⚡ **Instant lookup** - medical acronyms available offline
 - 🎨 **Beautiful TUI** - Orange-themed interactive interface
 - 🔍 **Real-time search** - Type to filter results instantly
 - 🎯 **Fuzzy matching** - Handles typos gracefully
