@@ -3,22 +3,18 @@
 ![Built with Go](https://img.shields.io/badge/built%20with-Go-informational)
 ![Offline First](https://img.shields.io/badge/offline-first-success)
 
-# tmdr — too medical; didn't read
+# tmdr 
+
+## too medical; didn't read
 
 A fast, offline terminal tool for looking up medical acronyms. Built for engineers in healthtech.
 
-**tmdr** gives you instant, offline access to medical acronyms — no context switching, no token burn, no bs.
-
-## ✨ Interactive Terminal UI
-
-```bash
-tmdr  # Launch interactive mode (default)
-```
+**tmdr** gives you instant, offline access to medical acronyms — no context switching, no token burn, 
 
 ## Features
 
-- ⚡ **Instant lookup** - medical acronyms available offline
-- 🎨 **Beautiful TUI** - Orange-themed interactive interface
+- ⚡ **Instant lookup** - inline medical acronyms ('tmdr <acronym>')
+- 🎨 **Bubbles TUI** - using charm bubbles ui and lipgloss
 - 🔍 **Real-time search** - Type to filter results instantly
 - 🎯 **Fuzzy matching** - Handles typos gracefully
 - 📚 **Zero dependencies** - Works completely offline
@@ -32,7 +28,7 @@ tmdr  # Launch interactive mode (default)
 curl -sSL https://tmdr.sh/install | bash
 ```
 
-### Option 2: Download Pre-built Binary (Recommended)
+### Option 2: Download Pre-built Binary
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/anthony-langham/tmdr/releases):
 
@@ -101,7 +97,7 @@ make clean
 
 ## Development Status
 
-**v0.3** - Production Ready
+Production Ready
 - ✅ Interactive Terminal UI with BubbleTea
 - ✅ Real-time search with fuzzy matching
 - ✅ 107 medical acronyms database
@@ -124,4 +120,6 @@ We'd love to hear from you!
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
+
+***Made up north 🐝***
 
