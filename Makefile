@@ -3,7 +3,7 @@
 
 # Variables
 BINARY_NAME=tmdr
-VERSION=v0.4.6
+VERSION=v0.4.7
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 GOPATH=$(shell go env GOPATH)
 GOBIN=$(GOPATH)/bin
@@ -72,28 +72,36 @@ dist: clean
 	@for platform in $(PLATFORMS); do \
 		GOOS=$$(echo $$platform | cut -d'/' -f1); \
 		GOARCH=$$(echo $$platform | cut -d'/' -f2); \
-		output_name="${DIST_DIR}/${BINARY_NAME}-${VERSION}-$$GOOS-$$GOARCH"; \
+		tmpdir="${DIST_DIR}/tmp-$$GOOS-$$GOARCH"; \
+		mkdir -p $$tmpdir; \
+		output_name="$$tmpdir/${BINARY_NAME}"; \
 		if [ "$$GOOS" = "windows" ]; then \
 			output_name="$$output_name.exe"; \
 		fi; \
 		echo "  Building $$GOOS/$$GOARCH..."; \
 		GOOS=$$GOOS GOARCH=$$GOARCH go build -o $$output_name . || exit 1; \
-		echo "  ${GREEN}✓${NC} $$output_name"; \
+		cd $$tmpdir && tar czf "../${BINARY_NAME}-${VERSION}-$$GOOS-$$GOARCH.tar.gz" * && cd ../.. || exit 1; \
+		rm -rf $$tmpdir; \
+		echo "  ${GREEN}✓${NC} ${BINARY_NAME}-${VERSION}-$$GOOS-$$GOARCH.tar.gz"; \
 	done
-	@echo "${GREEN}✓${NC} All platforms built"
+	@echo "${GREEN}✓${NC} All platforms built and archived"
 
 ## release: Create release archives
 release: dist
-	@echo "Creating release archives..."
+	@echo "Creating Windows zip archives..."
 	@cd ${DIST_DIR} && \
-	for file in ${BINARY_NAME}-*; do \
-		if [[ "$$file" == *.exe ]]; then \
-			zip "$${file%.exe}.zip" "$$file" && echo "  ${GREEN}✓${NC} $${file%.exe}.zip"; \
-		else \
-			tar czf "$$file.tar.gz" "$$file" && echo "  ${GREEN}✓${NC} $$file.tar.gz"; \
+	for file in ${BINARY_NAME}-*-windows-*.tar.gz; do \
+		if [ -f "$$file" ]; then \
+			base=$$(basename $$file .tar.gz); \
+			mkdir -p tmp-zip; \
+			tar -xzf $$file -C tmp-zip; \
+			cd tmp-zip && zip "../$${base}.zip" * && cd ..; \
+			rm -rf tmp-zip; \
+			rm $$file; \
+			echo "  ${GREEN}✓${NC} $${base}.zip"; \
 		fi; \
 	done
-	@echo "${GREEN}✓${NC} Release archives created"
+	@echo "${GREEN}✓${NC} Release archives ready"
 
 # Default target
 .DEFAULT_GOAL := help
