@@ -45,12 +45,10 @@ var (
 	// Title styles
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(accentColor).  // Orange color for title
-			Align(lipgloss.Center)
+			Foreground(accentColor)  // Orange color for title
 
 	subtitleStyle = lipgloss.NewStyle().
-			Foreground(secondaryColor).
-			Align(lipgloss.Center)
+			Foreground(secondaryColor)
 
 	// List styles
 	listItemStyle = lipgloss.NewStyle().

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	
+
 	"github.com/anthonylangham/tmdr/internal/acronym"
 	"github.com/anthonylangham/tmdr/internal/tui"
 	"github.com/anthonylangham/tmdr/internal/version"
@@ -95,18 +95,16 @@ func printAcronym(a *acronym.Acronym) {
 }
 
 func printHelp() {
-	fmt.Println("tmdr - Too Medical; Didn't Read")
+	fmt.Println("tmdr (too medical; didn't read)")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  tmdr <acronym>         Look up a medical acronym")
-	fmt.Println("  tmdr --random          Display a random acronym")
-	fmt.Println("  tmdr --interactive     Launch interactive TUI mode")
-	fmt.Println("  tmdr -i                Launch interactive TUI mode (shorthand)")
+	fmt.Println("  tmdr                   Launch Terminal App")
+	fmt.Println("  tmdr <acronym>         Look up a medical acronym inline")
+	fmt.Println("  tmdr --random          Display a random acronym inline")
 	fmt.Println("  tmdr --version         Show version information")
 	fmt.Println("  tmdr --help            Show this help message")
 	fmt.Println()
-	fmt.Println("Examples:")
+	fmt.Println("Example:")
 	fmt.Println("  tmdr abg               Look up ABG (Arterial Blood Gas)")
-	fmt.Println("  tmdr hiv               Look up HIV (Human Immunodeficiency Virus)")
-	fmt.Println("  tmdr --interactive     Browse acronyms interactively")
+	
 }

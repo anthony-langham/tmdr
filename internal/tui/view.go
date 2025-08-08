@@ -107,8 +107,23 @@ func (m Model) View() string {
 }
 
 func (m Model) viewHome() string {
-	title := titleStyle.Render("too medical; didn't read")
-	subtitle := subtitleStyle.Render("Your terminal-native tool for instant medical acronym help.")
+	// Center text manually using string padding
+	width := m.width - 4
+	titleText := "too medical; didn't read"
+	subtitleText := "Your terminal-native tool for instant medical acronym help."
+	
+	// Calculate padding for centering
+	titlePadding := (width - len(titleText)) / 2
+	if titlePadding < 0 {
+		titlePadding = 0
+	}
+	subtitlePadding := (width - len(subtitleText)) / 2
+	if subtitlePadding < 0 {
+		subtitlePadding = 0
+	}
+	
+	title := strings.Repeat(" ", titlePadding) + titleStyle.Render(titleText)
+	subtitle := strings.Repeat(" ", subtitlePadding) + subtitleStyle.Render(subtitleText)
 	
 	// Adjust content based on available height
 	var content string
@@ -121,26 +136,48 @@ func (m Model) viewHome() string {
 			"    • Press 'f' to send feedback",
 			"    • Press 'h' or 't' to return home",
 		}
+		
+		// Center instructions
+		centeredInstructions := make([]string, len(instructions))
+		for i, line := range instructions {
+			padding := (width - len(line)) / 2
+			if padding < 0 {
+				padding = 0
+			}
+			centeredInstructions[i] = strings.Repeat(" ", padding) + line
+		}
+		
 		dataInfo := fmt.Sprintf("⚙️  version: v%s", version.Version)
+		dataInfoPadding := (width - len(dataInfo)) / 2
+		if dataInfoPadding < 0 {
+			dataInfoPadding = 0
+		}
+		centeredDataInfo := strings.Repeat(" ", dataInfoPadding) + dataInfo
 		
 		content = lipgloss.JoinVertical(
-			lipgloss.Center,
+			lipgloss.Left,
 			"",
 			title,
 			subtitle,
 			"",
-			strings.Join(instructions, "\n"),
+			strings.Join(centeredInstructions, "\n"),
 			"",
-			dataInfo,
+			centeredDataInfo,
 		)
 	} else {
 		// Compact version for smaller terminals
 		shortcuts := "s: search | b: browse | f: feedback"
+		shortcutsPadding := (width - len(shortcuts)) / 2
+		if shortcutsPadding < 0 {
+			shortcutsPadding = 0
+		}
+		centeredShortcuts := strings.Repeat(" ", shortcutsPadding) + shortcuts
+		
 		content = lipgloss.JoinVertical(
-			lipgloss.Center,
+			lipgloss.Left,
 			title,
 			"",
-			shortcuts,
+			centeredShortcuts,
 		)
 	}
 
