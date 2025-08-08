@@ -5,20 +5,18 @@ import (
 )
 
 var (
-	// Colors
-	primaryColor   = lipgloss.Color("#FFFFFF")
-	secondaryColor = lipgloss.Color("#888888")
-	accentColor    = lipgloss.Color("#FF6600")
-	bgColor        = lipgloss.Color("#000000")
+	// Colors - using adaptive colors for better terminal compatibility
+	primaryColor   = lipgloss.AdaptiveColor{Light: "0", Dark: "15"}    // Black in light mode, White in dark mode
+	secondaryColor = lipgloss.AdaptiveColor{Light: "8", Dark: "7"}     // Gray
+	accentColor    = lipgloss.AdaptiveColor{Light: "202", Dark: "202"} // Orange (ANSI 256 color)
+	bgColor        = lipgloss.NoColor{}                                // No explicit background
 
 	// Base styles
 	baseStyle = lipgloss.NewStyle().
-			Background(bgColor).
 			Foreground(primaryColor)
 
-	// Full screen style to enforce dark background
+	// Full screen style
 	fullScreenStyle = lipgloss.NewStyle().
-			Background(bgColor).
 			Foreground(primaryColor)
 
 	// Navigation bar styles
@@ -26,7 +24,6 @@ var (
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderBottom(true).
 			BorderForeground(secondaryColor).
-			Background(bgColor).
 			Padding(0, 1)
 
 	navItemStyle = lipgloss.NewStyle().
@@ -39,7 +36,6 @@ var (
 
 	// Content area styles
 	contentStyle = lipgloss.NewStyle().
-			Background(bgColor).
 			Padding(1, 2)
 
 	// Title styles
@@ -82,8 +78,7 @@ var (
 	// Border styles for main container
 	containerStyle = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(secondaryColor).
-			Background(bgColor)
+			BorderForeground(secondaryColor)
 
 	// Help text style
 	helpStyle = lipgloss.NewStyle().
@@ -92,30 +87,26 @@ var (
 
 	// Error style
 	errorStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FF0000"))
+			Foreground(lipgloss.AdaptiveColor{Light: "1", Dark: "9"})
 )
 
 func renderNavBar() string {
 	// Special style for "tmdr" with orange and bold
 	tmdrStyle := lipgloss.NewStyle().
 		Foreground(accentColor).
-		Background(bgColor).
 		Bold(true)
 	
 	// Style for keyboard shortcuts - bold and prominent
 	keyStyle := lipgloss.NewStyle().
 		Foreground(primaryColor).
-		Background(bgColor).
 		Bold(true)
 	
 	// Style for labels - smaller, not bold
 	labelStyle := lipgloss.NewStyle().
-		Foreground(secondaryColor).
-		Background(bgColor)
+		Foreground(secondaryColor)
 	
 	separatorStyle := lipgloss.NewStyle().
-		Foreground(secondaryColor).
-		Background(bgColor)
+		Foreground(secondaryColor)
 	
 	// Build navigation items with bold keys and lighter labels
 	nav := tmdrStyle.Render("tmdr") +

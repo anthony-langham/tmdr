@@ -96,7 +96,19 @@ func (f *FeedbackForm) Update(msg tea.Msg) (*FeedbackForm, tea.Cmd) {
 	case tea.KeyMsg:
 		// Handle ESC first, before text input can consume it
 		if msg.String() == "esc" {
-			// ESC should always be handled by parent, not consumed here
+			// ESC goes back to previous question
+			if f.currentField > 0 {
+				// Blur current field if it's a text input
+				if !f.fields[f.currentField].isSelect {
+					f.fields[f.currentField].input.Blur()
+				}
+				f.currentField--
+				// Focus previous field if it's a text input
+				if !f.fields[f.currentField].isSelect {
+					return f, f.fields[f.currentField].input.Focus()
+				}
+			}
+			// If on first question, will be handled by main model to go home
 			return f, nil
 		}
 		
@@ -217,57 +229,74 @@ func (f *FeedbackForm) View() string {
 	
 	var s strings.Builder
 	
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#FF6600")).
-		MarginBottom(1)
+	// Show question counter
+	counterStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "8", Dark: "7"})
 	
-	s.WriteString(titleStyle.Render("📝 Product Feedback"))
+	s.WriteString(counterStyle.Render(fmt.Sprintf("Question %d of %d", f.currentField+1, len(f.fields))))
 	s.WriteString("\n\n")
 	
-	for i, field := range f.fields {
+	// Show only current question and surrounding context
+	start := f.currentField - 1
+	if start < 0 {
+		start = 0
+	}
+	end := f.currentField + 2
+	if end > len(f.fields) {
+		end = len(f.fields)
+	}
+	
+	for i := start; i < end; i++ {
+		field := f.fields[i]
+		
 		// Field label
-		labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
+		labelStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"})
 		if i == f.currentField {
-			labelStyle = labelStyle.Bold(true).Foreground(lipgloss.Color("#FF6600"))
+			labelStyle = labelStyle.Bold(true).Foreground(lipgloss.AdaptiveColor{Light: "202", Dark: "202"})
+		} else {
+			labelStyle = labelStyle.Foreground(lipgloss.AdaptiveColor{Light: "8", Dark: "8"})
 		}
 		
 		s.WriteString(labelStyle.Render(fmt.Sprintf("%d. %s", i+1, field.label)))
 		s.WriteString("\n")
 		
-		// Field value/options
-		if field.isSelect {
-			for _, opt := range field.options {
-				optionStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666"))
-				prefix := "   ○ "
-				
-				if opt == field.value {
-					if i == f.currentField {
-						optionStyle = optionStyle.Foreground(lipgloss.Color("#FF6600")).Bold(true)
+		// Only show options for current field
+		if i == f.currentField {
+			if field.isSelect {
+				for _, opt := range field.options {
+					optionStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "8", Dark: "7"})
+					prefix := "   ○ "
+					
+					if opt == field.value {
+						optionStyle = optionStyle.Foreground(lipgloss.AdaptiveColor{Light: "202", Dark: "202"}).Bold(true)
 						prefix = " ▸ ● "
-					} else {
-						optionStyle = optionStyle.Foreground(lipgloss.Color("#FFFFFF"))
-						prefix = "   ● "
 					}
-				} else if i == f.currentField {
-					optionStyle = optionStyle.Foreground(lipgloss.Color("#AAAAAA"))
+					
+					s.WriteString(optionStyle.Render(prefix + opt))
+					s.WriteString("\n")
 				}
-				
-				s.WriteString(optionStyle.Render(prefix + opt))
+			} else {
+				// Text input field
+				s.WriteString("   ")
+				s.WriteString(field.input.View())
 				s.WriteString("\n")
 			}
 		} else {
-			// Text input field
-			s.WriteString("   ")
-			s.WriteString(field.input.View())
+			// Show selected value for non-current fields
+			valueStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "8", Dark: "8"})
+			if field.isSelect {
+				s.WriteString(valueStyle.Render("   → " + field.value))
+			} else if field.value != "" {
+				s.WriteString(valueStyle.Render("   → " + field.value))
+			}
 			s.WriteString("\n")
 		}
 		s.WriteString("\n")
 	}
 	
 	// Instructions
-	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#666666")).MarginTop(1)
-	help := "↑/↓ or tab: navigate • ←/→: change selection • enter: next/submit • esc: cancel"
+	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "8", Dark: "8"}).MarginTop(1)
+	help := "↑/↓ = navigate • ←/→ = select • enter = submit • esc = back"
 	s.WriteString(helpStyle.Render(help))
 	
 	return s.String()
