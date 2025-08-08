@@ -144,6 +144,3 @@ We'd love to hear from you! Press `f` in the app to send feedback directly.
 
 MIT License - See [LICENSE](LICENSE) for details.
 
----
-
-Made with 🧡 for engineers in healthtech
