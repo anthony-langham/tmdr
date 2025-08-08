@@ -247,10 +247,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Submit feedback
 			m.submitFeedback()
 			
-			// Return to home after submission
+			// Return to home after submission with screen refresh
 			m.state = StateHome
 			m.feedbackForm.Reset()
-			return m, nil
+			return m, tea.ClearScreen
 		}
 		
 		return m, cmd
