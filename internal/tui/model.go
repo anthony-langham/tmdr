@@ -68,10 +68,10 @@ func NewModel(repo acronym.Repository) Model {
 	ti.CharLimit = 100
 	ti.Width = 50
 	
-	// Set cursor to orange using the Cursor properties
-	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF"))
-	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6600")).Background(lipgloss.Color("#FF6600"))
-	ti.Cursor.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6600"))
+	// Set cursor to orange using adaptive colors for compatibility
+	ti.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"})
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "202", Dark: "202"})
+	ti.Cursor.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"})
 	
 	m := Model{
 		state:         StateHome,
@@ -170,9 +170,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.state == StateFeedback {
 		// Handle ESC key specially
 		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "esc" {
-			m.state = StateHome
-			m.feedbackForm.Reset()
-			return m, nil
+			// If on first question, go back to home
+			if m.feedbackForm.currentField == 0 {
+				m.state = StateHome
+				m.feedbackForm.Reset()
+				return m, nil
+			}
+			// Otherwise let the form handle going back
 		}
 		
 		// Update custom feedback form

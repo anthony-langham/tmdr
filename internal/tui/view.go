@@ -17,24 +17,24 @@ func (m Model) View() string {
 	var updateNotification string
 	if m.updateReady {
 		updateNotification = lipgloss.NewStyle().
-			Background(lipgloss.Color("#00AA00")).
-			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.AdaptiveColor{Light: "2", Dark: "10"}).
+			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"}).
 			Padding(0, 1).
 			Width(m.width).
 			Align(lipgloss.Center).
 			Render(fmt.Sprintf("✨ tmdr v%s downloaded! Restart to apply update", m.updateInfo.Version))
 	} else if m.updateDownloading {
 		updateNotification = lipgloss.NewStyle().
-			Background(lipgloss.Color("#FF6600")).
-			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.AdaptiveColor{Light: "202", Dark: "202"}).
+			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"}).
 			Padding(0, 1).
 			Width(m.width).
 			Align(lipgloss.Center).
 			Render(fmt.Sprintf("⬇️ Downloading tmdr v%s...", m.updateInfo.Version))
 	} else if m.updateInfo.Available && m.updateError == nil {
 		updateNotification = lipgloss.NewStyle().
-			Background(lipgloss.Color("#0066CC")).
-			Foreground(lipgloss.Color("#FFFFFF")).
+			Background(lipgloss.AdaptiveColor{Light: "4", Dark: "12"}).
+			Foreground(lipgloss.AdaptiveColor{Light: "0", Dark: "15"}).
 			Padding(0, 1).
 			Width(m.width).
 			Align(lipgloss.Center).
@@ -59,10 +59,9 @@ func (m Model) View() string {
 	navContent := renderNavBar()
 	navBar := lipgloss.NewStyle().
 		Width(m.width - 2).
-		Background(bgColor).
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderBottom(true).
-		BorderForeground(lipgloss.Color("#888888")).
+		BorderForeground(lipgloss.AdaptiveColor{Light: "8", Dark: "7"}).
 		Padding(0, 1).
 		Render(navContent)
 
@@ -107,23 +106,14 @@ func (m Model) View() string {
 }
 
 func (m Model) viewHome() string {
-	// Center text manually using string padding
+	// Use PlaceHorizontal for centering without background artifacts
 	width := m.width - 4
-	titleText := "too medical; didn't read"
-	subtitleText := "Your terminal-native tool for instant medical acronym help."
-	
-	// Calculate padding for centering
-	titlePadding := (width - len(titleText)) / 2
-	if titlePadding < 0 {
-		titlePadding = 0
-	}
-	subtitlePadding := (width - len(subtitleText)) / 2
-	if subtitlePadding < 0 {
-		subtitlePadding = 0
+	if width < 1 {
+		width = 1
 	}
 	
-	title := strings.Repeat(" ", titlePadding) + titleStyle.Render(titleText)
-	subtitle := strings.Repeat(" ", subtitlePadding) + subtitleStyle.Render(subtitleText)
+	title := lipgloss.PlaceHorizontal(width, lipgloss.Center, titleStyle.Render("too medical; didn't read"))
+	subtitle := lipgloss.PlaceHorizontal(width, lipgloss.Center, subtitleStyle.Render("Your terminal-native tool for instant medical acronym help."))
 	
 	// Adjust content based on available height
 	var content string
@@ -137,22 +127,14 @@ func (m Model) viewHome() string {
 			"    • Press 'h' or 't' to return home",
 		}
 		
-		// Center instructions
+		// Center each instruction line
 		centeredInstructions := make([]string, len(instructions))
 		for i, line := range instructions {
-			padding := (width - len(line)) / 2
-			if padding < 0 {
-				padding = 0
-			}
-			centeredInstructions[i] = strings.Repeat(" ", padding) + line
+			centeredInstructions[i] = lipgloss.PlaceHorizontal(width, lipgloss.Center, line)
 		}
 		
 		dataInfo := fmt.Sprintf("⚙️  version: v%s", version.Version)
-		dataInfoPadding := (width - len(dataInfo)) / 2
-		if dataInfoPadding < 0 {
-			dataInfoPadding = 0
-		}
-		centeredDataInfo := strings.Repeat(" ", dataInfoPadding) + dataInfo
+		centeredDataInfo := lipgloss.PlaceHorizontal(width, lipgloss.Center, dataInfo)
 		
 		content = lipgloss.JoinVertical(
 			lipgloss.Left,
@@ -167,11 +149,7 @@ func (m Model) viewHome() string {
 	} else {
 		// Compact version for smaller terminals
 		shortcuts := "s: search | b: browse | f: feedback"
-		shortcutsPadding := (width - len(shortcuts)) / 2
-		if shortcutsPadding < 0 {
-			shortcutsPadding = 0
-		}
-		centeredShortcuts := strings.Repeat(" ", shortcutsPadding) + shortcuts
+		centeredShortcuts := lipgloss.PlaceHorizontal(width, lipgloss.Center, shortcuts)
 		
 		content = lipgloss.JoinVertical(
 			lipgloss.Left,
@@ -343,18 +321,16 @@ func (m Model) viewFeedback() string {
 		formView = m.feedbackForm.View()
 	}
 	
-	help := helpStyle.Render("Navigate with ↑↓ • Select with Enter • Press ESC to go back")
+	// Debug: If form is empty, show a message
+	if formView == "" {
+		formView = "Error: Feedback form not initialized"
+	}
 	
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		"",
-		formView,
-		"",
-		help,
-	)
+	content := formView
 
+	// Don't restrict height for feedback form to prevent truncation
 	return contentStyle.
 		Width(m.width - 4).
-		Height(m.height - 6).
+		Padding(1, 2).
 		Render(content)
 }
