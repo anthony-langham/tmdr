@@ -3,7 +3,7 @@
 
 # Variables
 BINARY_NAME=tmdr
-VERSION=v0.4
+VERSION=v0.4.6
 BUILD_TIME=$(shell date -u '+%Y-%m-%d_%H:%M:%S')
 GOPATH=$(shell go env GOPATH)
 GOBIN=$(GOPATH)/bin
