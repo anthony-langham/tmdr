@@ -119,7 +119,7 @@ Contributions welcome! Feel free to:
 
 We'd love to hear from you! 
 - Press `f` in the app to send feedback. 
-- email hello@tmdr.sh.
+- email hello@tmdr.sh
 
 ## License
 
