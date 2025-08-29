@@ -9,6 +9,8 @@
 
 A fast, offline CLI tool and Terminal app for looking up medical acronyms. Built for engineers in healthtech.
 
+https://github.com/anthony-langham/tmdr/issues/3#issue-3367024668
+
 **tmdr** gives you instant, offline access to medical acronyms. no context switching, no token burn. 
 
 ## Features
